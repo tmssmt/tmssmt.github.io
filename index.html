@@ -1,11 +1,107 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Battery Price Comparison (Loading...)</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Price Comparison - Best Value Today</title>
+    <meta name="description" content="Find the absolute cheapest cost per unit for popular AA, AAA, and specialty batteries across major retailers. Compare prices instantly!">
+
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        p { color: #555; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+        .best-deal { background-color: #d4edda; font-weight: bold; }
+    </style>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js"></script>
 </head>
 <body>
-    <h1>Welcome to Your Free Price Comparison Site!</h1>
-    <p>If you can see this, GitHub Pages is working!</p>
-    <p>Next step: We will connect this page to the Google Sheet data.</p>
+    <h1>Battery Price Comparison (Unit Cost)</h1>
+    <p>We track prices to find the absolute lowest <strong>Cost Per Unit</strong> for your batteries. Data last updated: <span id="last-updated-time">Checking...</span></p>
+
+    <div id="loading">Loading comparison data...</div>
+    
+    <table id="comparisonTable">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Store</th>
+                <th>Unit Price (BEST VALUE)</th>
+                <th>Total Cost</th>
+                <th>Pack Size</th>
+                <th>Last Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+
+    <script>
+        // 2. PASTE YOUR SPREADSHEET KEY HERE
+        const SPREADSHEET_KEY = '1MUlWSLwtcnxiyoxNVOBZ4Plhc5t6qWCn9NP3yr4p5vg'; 
+        
+        // 3. Initialize Tabletop.js and fetch data from the single sheet
+        window.onload = function() {
+            Tabletop.init({
+                key: SPREADSHEET_KEY,
+                callback: showComparisonTable,
+                simpleSheet: true // Fetching ONLY the first sheet (Offers)
+            });
+        }
+
+        // 4. Function to process and display the data
+        function showComparisonTable(data) {
+            document.getElementById('loading').style.display = 'none'; // Hide loading message
+            const tableBody = document.querySelector('#comparisonTable tbody');
+            let bestUnitPrice = Infinity;
+            let rows = [];
+
+            // Find the lowest Unit Price across all offers
+            data.forEach(item => {
+                // Ensure correct header names are used (matching your sheet)
+                const unitPrice = parseFloat(item.Unit_Price); 
+                
+                // Add the item only if Unit_Price is a valid positive number
+                if (!isNaN(unitPrice) && unitPrice > 0) {
+                    rows.push(item);
+                    if (unitPrice < bestUnitPrice) {
+                        bestUnitPrice = unitPrice;
+                    }
+                }
+            });
+
+            // Sort the data by Unit_Price (lowest first)
+            rows.sort((a, b) => parseFloat(a.Unit_Price) - parseFloat(b.Unit_Price));
+            
+            // Set the overall last updated time from the first row's data
+            if (rows.length > 0) {
+                document.getElementById('last-updated-time').textContent = rows[0].Last_Updated;
+            }
+
+            // Build the HTML table rows
+            rows.forEach(item => {
+                const unitPrice = parseFloat(item.Unit_Price);
+                const isBestDeal = unitPrice === bestUnitPrice;
+
+                const row = document.createElement('tr');
+                if (isBestDeal) {
+                    row.classList.add('best-deal');
+                }
+
+                row.innerHTML = `
+                    <td>${item.Product_Name_Short || item.Product_Name}</td>
+                    <td>${item.Store_Name}</td>
+                    <td><a href="${item.Store_Link}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
+                    <td>\$${parseFloat(item.Total_Cost).toFixed(2)}</td>
+                    <td>${item.Pack_Quantity}</td>
+                    <td>${item.Last_Updated}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    </script>
 </body>
 </html>
