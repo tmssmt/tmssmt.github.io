@@ -3,37 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> 
+    
     <title>Atlas Battery Price Comparison: Cheapest Cost Per Unit & Historical Lows</title>
     <meta name="description" content="We track prices to find the absolute lowest cost per unit for popular AA, AAA, and specialty batteries and compare current deals against historical lowest prices.">
 
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-        h1 { color: #333; margin-top: 0; }
-        h2 { border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 40px; }
-        p { color: #555; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #f2f2f2; }
-        .best-deal { background-color: #d4edda; font-weight: bold; }
-        .historical-low { background-color: #ffe0b2; } /* Light orange for historical info */
-        .seo-content { margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 5px solid #007bff; }
+        /* Your custom styles to override Pico and handle highlights */
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.6; 
+            /* Center the main content */
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h2 { border-bottom: 2px solid var(--pico-secondary); padding-bottom: 5px; margin-top: 40px; }
+        
+        /* Custom Table Highlights */
+        .best-deal { 
+            background-color: #d4edda !important; /* Light green for best current price */
+            font-weight: bold; 
+        }
+        .historical-low { 
+            background-color: #ffe0b2; /* Light orange for historical info */
+        } 
+        
+        /* Footer and Disclosure */
+        footer { 
+            margin-top: 50px; 
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+            text-align: center;
+        }
+        .disclosure {
+            font-size: 0.75em;
+            color: #777;
+            margin-top: 5px;
+        }
+        .seo-content { 
+            margin-top: 30px; 
+            padding: 15px; 
+            background-color: var(--pico-section-background); 
+            border-left: 5px solid var(--pico-primary); 
+        }
     </style>
     
     <script src="papaparse.min.js"></script> 
 </head>
 <body>
-    <h1>Battery Price Comparison (Unit Cost & Historical Value)</h1>
-    <p>We track prices to find the absolute lowest <strong>Cost Per Unit</strong> for your batteries, comparing them against the best historical value.</p>
+    <main class="container"> 
+        <h1>Battery Price Comparison (Unit Cost & Historical Value)</h1>
+        <p>We track prices to find the absolute lowest <strong>Cost Per Unit</strong> for your batteries, comparing them against the best historical value.</p>
 
-    <div id="loading">Loading comparison data from offers.csv...</div>
-    
-    <div id="comparison-container">
+        <div id="loading">Loading comparison data from offers.csv...</div>
+        
+        <div id="comparison-container">
+            </div>
+
+        <div class="seo-content">
+            <h2>Find the Cheapest Cost Per Unit for AA, AAA, and Specialty Batteries</h2>
+            <p>Welcome to Atlas Battery Comparison! We are your dedicated resource for finding the true best value, calculated by the <strong>cost per unit</strong>. We now track current prices against the **Best Historical Price** to tell you if the deal is truly worth it. Why pay for expensive packaging when you can compare prices and identify the absolute cheapest deal on the market? We track popular brands like Energizer and Duracell, especially for **AA battery bulk pack** offers, to ensure you stop overpaying and always get the best price for your electronics.</p>
         </div>
+    </main>
 
-    <div class="seo-content">
-        <h2>Find the Cheapest Cost Per Unit for AA, AAA, and Specialty Batteries</h2>
-        <p>Welcome to Atlas Battery Comparison! We are your dedicated resource for finding the true best value, calculated by the <strong>cost per unit</strong>. We now track current prices against the **Best Historical Price** to tell you if the deal is truly worth it. Why pay for expensive packaging when you can compare prices and identify the absolute cheapest deal on the market? We track popular brands like Energizer and Duracell, especially for **AA battery bulk pack** offers, to ensure you stop overpaying and always get the best price for your electronics.</p>
-    </div>
+    <footer>
+        <p class="disclosure">
+            As an Amazon Associate I earn from qualifying purchases. | 
+            <a href="privacy.html">Privacy Policy</a>
+        </p>
+    </footer>
 
     <script>
         const CSV_URL = 'offers.csv'; 
@@ -52,24 +92,21 @@
         }
 
         function showComparisonTables(results) {
-            document.getElementById('loading').style.display = 'none'; 
+            document.getElementById('loading').remove(); 
             
-            // Papa Parse reads data with the original capitalization. We use that here.
             const rawData = results.data.filter(row => row.Unit_Price); 
             const container = document.getElementById('comparison-container');
             
             // 1. Group Data by Product_Name_Short
             const groupedData = rawData.reduce((acc, item) => {
-                // Accessing the EXACT capitalized header
-                const type = item.Product_Name_Short || 'Other Batteries';
+                // Accessing the capitalized header for grouping
+                const type = item.Product_Name_Short || 'Other Batteries'; 
                 if (!acc[type]) {
                     acc[type] = [];
                 }
                 acc[type].push(item);
                 return acc;
             }, {});
-            
-            document.getElementById('loading').remove();
 
             // 2. Loop Through Groups and Build a Table for Each
             for (const batteryType in groupedData) {
@@ -78,12 +115,12 @@
                 // --- Group Logic ---
                 let bestUnitPrice = Infinity;
                 typeOffers.forEach(item => {
-                    const unitPrice = parseFloat(item.Unit_Price); // Use capitalized name
+                    const unitPrice = parseFloat(item.Unit_Price);
                     if (!isNaN(unitPrice) && unitPrice > 0 && unitPrice < bestUnitPrice) {
                         bestUnitPrice = unitPrice;
                     }
                 });
-                typeOffers.sort((a, b) => parseFloat(a.Unit_Price) - parseFloat(b.Unit_Price)); // Use capitalized name
+                typeOffers.sort((a, b) => parseFloat(a.Unit_Price) - parseFloat(b.Unit_Price));
 
                 // 3. Create Heading and Table Element
                 const heading = document.createElement('h2');
@@ -109,7 +146,6 @@
 
                 // 4. Populate Table Body
                 typeOffers.forEach(item => {
-                    // Accessing the EXACT capitalized headers for display and logic
                     const unitPrice = parseFloat(item.Unit_Price);
                     const historicalLow = parseFloat(item.Best_Historical_Price); 
                     const isBestDeal = unitPrice === bestUnitPrice;
@@ -119,7 +155,6 @@
                         row.classList.add('best-deal');
                     }
                     
-                    // Display Row with Corrected Header Access
                     row.innerHTML = `
                         <td>${item.Brand} - ${item.Pack_Quantity} Pack</td>
                         <td>${item.Store_Name}</td>
