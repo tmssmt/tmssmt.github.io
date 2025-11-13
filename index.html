@@ -26,7 +26,9 @@
             background-color: #d4edda !important; /* Light green for best current price */
             font-weight: bold; 
         }
-               
+        
+        /* NOTE: The 'historical-low' background color is removed from here for readability. */
+        
         /* Footer and Disclosure */
         footer { 
             margin-top: 50px; 
@@ -96,8 +98,7 @@
             
             // 1. Group Data by Product_Name_Short
             const groupedData = rawData.reduce((acc, item) => {
-                // Accessing the capitalized header for grouping
-                const type = item.Product_Name_Short || 'Other Batteries'; 
+                const type = item.Product_Name_Short || 'Other Batteries';
                 if (!acc[type]) {
                     acc[type] = [];
                 }
@@ -125,14 +126,16 @@
                 container.appendChild(heading);
 
                 const table = document.createElement('table');
+                
+                // Note: Removed class="historical-low" from THs
                 table.innerHTML = `
                     <thead>
                         <tr>
                             <th>Brand & Pack</th>
                             <th>Store</th>
                             <th>Unit Price (Current)</th>
-                            <th class="historical-low">Best Hist. Price</th>
-                            <th class="historical-low">Value Status</th>
+                            <th>Best Hist. Unit Price</th> 
+                            <th>Value Status</th>
                             <th>Last Updated</th>
                         </tr>
                     </thead>
@@ -144,7 +147,8 @@
                 // 4. Populate Table Body
                 typeOffers.forEach(item => {
                     const unitPrice = parseFloat(item.Unit_Price);
-                    const historicalLow = parseFloat(item.Best_Historical_Price); 
+                    // Use the new, correct column for Unit Price comparison
+                    const historicalUnitLow = parseFloat(item.Best_Historical_Unit_Price); 
                     const isBestDeal = unitPrice === bestUnitPrice;
                     
                     const row = document.createElement('tr');
@@ -152,12 +156,13 @@
                         row.classList.add('best-deal');
                     }
                     
+                    // Note: Removed class="historical-low" from TDs
                     row.innerHTML = `
                         <td>${item.Brand} - ${item.Pack_Quantity} Pack</td>
                         <td>${item.Store_Name}</td>
                         <td><a href="${item.Store_Link}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
-                        <td class="historical-low">\$${historicalLow ? historicalLow.toFixed(4) : 'N/A'}</td>
-                        <td class="historical-low">${item.Current_V_Best || 'N/A'}</td>
+                        <td>\$${historicalUnitLow ? historicalUnitLow.toFixed(4) : 'N/A'}</td>
+                        <td>${item.Current_V_Best || 'N/A'}</td>
                         <td>${item.Last_Updated}</td>
                     `;
                     tableBody.appendChild(row);
