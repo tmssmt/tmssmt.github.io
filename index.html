@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Battery Price Comparison: Cheapest Cost Per Unit Today</title>
-    <meta name="description" content="We track prices to find the absolute lowest cost per unit for popular AA, AAA, and specialty batteries across major retailers. Stop overpaying and find the true best value instantly!">
+    <title>Atlas Battery Price Comparison: Cheapest Cost Per Unit & Historical Lows</title>
+    <meta name="description" content="We track prices to find the absolute lowest cost per unit for popular AA, AAA, and specialty batteries and compare current deals against historical lowest prices.">
 
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
@@ -15,14 +15,15 @@
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #f2f2f2; }
         .best-deal { background-color: #d4edda; font-weight: bold; }
+        .historical-low { background-color: #ffe0b2; } /* Light orange for historical info */
         .seo-content { margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 5px solid #007bff; }
     </style>
     
     <script src="papaparse.min.js"></script> 
 </head>
 <body>
-    <h1>Battery Price Comparison (Unit Cost)</h1>
-    <p>We track prices to find the absolute lowest <strong>Cost Per Unit</strong> for your batteries.</p>
+    <h1>Battery Price Comparison (Unit Cost & Historical Value)</h1>
+    <p>We track prices to find the absolute lowest <strong>Cost Per Unit</strong> for your batteries, comparing them against the best historical value.</p>
 
     <div id="loading">Loading comparison data from offers.csv...</div>
     
@@ -31,7 +32,7 @@
 
     <div class="seo-content">
         <h2>Find the Cheapest Cost Per Unit for AA, AAA, and Specialty Batteries</h2>
-        <p>Welcome to Atlas Battery Comparison! We are your dedicated resource for finding the true best value, calculated by the <strong>cost per unit</strong>. Why pay for expensive packaging when you can compare prices and identify the absolute cheapest deal on the market? We track popular brands like Energizer and Duracell, especially for **AA battery bulk pack** offers, to ensure you stop overpaying and always get the best price for your electronics.</p>
+        <p>Welcome to Atlas Battery Comparison! We are your dedicated resource for finding the true best value, calculated by the <strong>cost per unit</strong>. We now track current prices against the **Best Historical Price** to tell you if the deal is truly worth it. Why pay for expensive packaging when you can compare prices and identify the absolute cheapest deal on the market? We track popular brands like Energizer and Duracell, especially for **AA battery bulk pack** offers, to ensure you stop overpaying and always get the best price for your electronics.</p>
     </div>
 
     <script>
@@ -42,7 +43,7 @@
                 download: true,
                 header: true,
                 dynamicTyping: true,
-                complete: showComparisonTables, // Renamed function
+                complete: showComparisonTables,
                 error: function(error) {
                     document.getElementById('loading').textContent = 'ERROR loading CSV: Check file name and data format.';
                     console.error('Papa Parse Error:', error);
@@ -50,17 +51,15 @@
             });
         }
 
-        // The new function handles the grouping and rendering of multiple tables
         function showComparisonTables(results) {
             document.getElementById('loading').style.display = 'none'; 
             
-            // Filter out empty rows and ensure headers are handled (Papa Parse makes them lowercase by default)
+            // Filter out empty rows
             const rawData = results.data.filter(row => row.Unit_Price || row.unit_price); 
             const container = document.getElementById('comparison-container');
             
             // 1. Group Data by Product_Name_Short
             const groupedData = rawData.reduce((acc, item) => {
-                // Safely get the battery type, defaulting if necessary
                 const type = item.Product_Name_Short || item.product_name_short || 'Other Batteries';
                 if (!acc[type]) {
                     acc[type] = [];
@@ -68,12 +67,15 @@
                 acc[type].push(item);
                 return acc;
             }, {});
+            
+            // Remove the initial loading text
+            document.getElementById('loading').remove();
 
             // 2. Loop Through Groups and Build a Table for Each
             for (const batteryType in groupedData) {
                 const typeOffers = groupedData[batteryType];
                 
-                // Find the overall lowest unit price for THIS specific group
+                // --- Group Logic ---
                 let bestUnitPrice = Infinity;
                 typeOffers.forEach(item => {
                     const unitPrice = parseFloat(item.Unit_Price || item.unit_price);
@@ -81,8 +83,6 @@
                         bestUnitPrice = unitPrice;
                     }
                 });
-
-                // Sort the data by Unit_Price (lowest first) for the current type
                 typeOffers.sort((a, b) => parseFloat(a.Unit_Price || a.unit_price) - parseFloat(b.Unit_Price || b.unit_price));
 
                 // 3. Create Heading and Table Element
@@ -91,14 +91,15 @@
                 container.appendChild(heading);
 
                 const table = document.createElement('table');
+                // Updated Table Headers for Historical Data
                 table.innerHTML = `
                     <thead>
                         <tr>
-                            <th>Product Name</th>
+                            <th>Brand & Pack</th>
                             <th>Store</th>
-                            <th>Unit Price (BEST VALUE)</th>
-                            <th>Total Cost</th>
-                            <th>Pack Size</th>
+                            <th>Unit Price (Current)</th>
+                            <th class="historical-low">Best Hist. Price</th>
+                            <th class="historical-low">Value Status</th>
                             <th>Last Updated</th>
                         </tr>
                     </thead>
@@ -109,22 +110,22 @@
 
                 // 4. Populate Table Body
                 typeOffers.forEach(item => {
-                    // Safely access data, accounting for Papa Parse's lowercase conversion
                     const unitPrice = parseFloat(item.Unit_Price || item.unit_price);
-                    const totalCost = parseFloat(item.Total_Cost || item.total_cost);
+                    const historicalLow = parseFloat(item.Best_Historical_Price || item.best_historical_price); // NEW
                     const isBestDeal = unitPrice === bestUnitPrice;
 
                     const row = document.createElement('tr');
                     if (isBestDeal) {
                         row.classList.add('best-deal');
                     }
-
+                    
+                    // Note: We are using Brand and Pack Quantity to describe the product
                     row.innerHTML = `
-                        <td>${item.Product_Name || item.product_name || 'N/A'}</td>
-                        <td>${item.Store_Name || item.store_name}</td>
-                        <td><a href="${item.Store_Link || item.store_link}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
-                        <td>\$${totalCost.toFixed(2)}</td>
-                        <td>${item.Pack_Quantity || item.pack_quantity}</td>
+                        <td>${item.Brand} - ${item.Pack_Quantity} Pack</td>
+                        <td>${item.Store_Name}</td>
+                        <td><a href="${item.Store_Link}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
+                        <td class="historical-low">\$${historicalLow ? historicalLow.toFixed(4) : 'N/A'}</td>
+                        <td class="historical-low">${item.Current_V_Best || item.current_v_best || 'N/A'}</td>
                         <td>${item.Last_Updated || item.last_updated}</td>
                     `;
                     tableBody.appendChild(row);
