@@ -9,6 +9,7 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
         h1 { color: #333; margin-top: 0; }
+        h2 { border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 40px; }
         p { color: #555; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
@@ -21,41 +22,27 @@
 </head>
 <body>
     <h1>Battery Price Comparison (Unit Cost)</h1>
-    <p>We track prices to find the absolute lowest **Cost Per Unit** for your batteries.</p>
+    <p>We track prices to find the absolute lowest <strong>Cost Per Unit</strong> for your batteries.</p>
 
     <div id="loading">Loading comparison data from offers.csv...</div>
     
-    <table id="comparisonTable">
-        <thead>
-            <tr>
-                <th>Product Name</th>
-                <th>Store</th>
-                <th>Unit Price (BEST VALUE)</th>
-                <th>Total Cost</th>
-                <th>Pack Size</th>
-                <th>Last Updated</th>
-            </tr>
-        </thead>
-        <tbody>
-            </tbody>
-    </table>
+    <div id="comparison-container">
+        </div>
 
     <div class="seo-content">
         <h2>Find the Cheapest Cost Per Unit for AA, AAA, and Specialty Batteries</h2>
-        <p>Welcome to Atlas Battery Comparison! We are your dedicated resource for finding the true best value, calculated by the **cost per unit**. Why pay for expensive packaging when you can compare prices and identify the absolute cheapest deal on the market? We track popular brands like Energizer and Duracell, especially for **AA battery bulk pack** offers, to ensure you stop overpaying and always get the best price for your electronics.</p>
+        <p>Welcome to Atlas Battery Comparison! We are your dedicated resource for finding the true best value, calculated by the <strong>cost per unit</strong>. Why pay for expensive packaging when you can compare prices and identify the absolute cheapest deal on the market? We track popular brands like Energizer and Duracell, especially for **AA battery bulk pack** offers, to ensure you stop overpaying and always get the best price for your electronics.</p>
     </div>
 
     <script>
-        // File URL for the CSV (must be named offers.csv)
         const CSV_URL = 'offers.csv'; 
 
         window.onload = function() {
-            // Use Papa Parse to fetch and process the CSV data
             Papa.parse(CSV_URL, {
-                download: true, // Tells Papa Parse to fetch the file from the URL
-                header: true,   // Use the first row as column headers (e.g., "Unit_Price")
-                dynamicTyping: true, // Converts numerical strings to numbers
-                complete: showComparisonTable, // Call this function when done
+                download: true,
+                header: true,
+                dynamicTyping: true,
+                complete: showComparisonTables, // Renamed function
                 error: function(error) {
                     document.getElementById('loading').textContent = 'ERROR loading CSV: Check file name and data format.';
                     console.error('Papa Parse Error:', error);
@@ -63,55 +50,86 @@
             });
         }
 
-        // Function to process and display the data
-        function showComparisonTable(results) {
+        // The new function handles the grouping and rendering of multiple tables
+        function showComparisonTables(results) {
             document.getElementById('loading').style.display = 'none'; 
             
-            // Filter out any rows that failed to parse (often empty or malformed)
-            const rawData = results.data.filter(row => row.Unit_Price); 
-            const tableBody = document.querySelector('#comparisonTable tbody');
-            let bestUnitPrice = Infinity;
-            let rows = [];
+            // Filter out empty rows and ensure headers are handled (Papa Parse makes them lowercase by default)
+            const rawData = results.data.filter(row => row.Unit_Price || row.unit_price); 
+            const container = document.getElementById('comparison-container');
+            
+            // 1. Group Data by Product_Name_Short
+            const groupedData = rawData.reduce((acc, item) => {
+                // Safely get the battery type, defaulting if necessary
+                const type = item.Product_Name_Short || item.product_name_short || 'Other Batteries';
+                if (!acc[type]) {
+                    acc[type] = [];
+                }
+                acc[type].push(item);
+                return acc;
+            }, {});
 
-            // 1. Data Processing and Sorting Logic
-            rawData.forEach(item => {
-                // Papa Parse makes headers lowercase by default, so we check for common names:
-                const unitPrice = parseFloat(item.Unit_Price || item.unit_price); 
+            // 2. Loop Through Groups and Build a Table for Each
+            for (const batteryType in groupedData) {
+                const typeOffers = groupedData[batteryType];
                 
-                // Add the item only if Unit_Price is a valid positive number
-                if (!isNaN(unitPrice) && unitPrice > 0) {
-                    rows.push(item);
-                    if (unitPrice < bestUnitPrice) {
+                // Find the overall lowest unit price for THIS specific group
+                let bestUnitPrice = Infinity;
+                typeOffers.forEach(item => {
+                    const unitPrice = parseFloat(item.Unit_Price || item.unit_price);
+                    if (!isNaN(unitPrice) && unitPrice > 0 && unitPrice < bestUnitPrice) {
                         bestUnitPrice = unitPrice;
                     }
-                }
-            });
+                });
 
-            // Sort the data by Unit_Price (lowest first)
-            rows.sort((a, b) => parseFloat(a.Unit_Price || a.unit_price) - parseFloat(b.Unit_Price || b.unit_price));
-            
-            // 2. Build the HTML table rows
-            rows.forEach(item => {
-                const unitPrice = parseFloat(item.Unit_Price || item.unit_price);
-                const totalCost = parseFloat(item.Total_Cost || item.total_cost);
-                const isBestDeal = unitPrice === bestUnitPrice;
+                // Sort the data by Unit_Price (lowest first) for the current type
+                typeOffers.sort((a, b) => parseFloat(a.Unit_Price || a.unit_price) - parseFloat(b.Unit_Price || b.unit_price));
 
-                const row = document.createElement('tr');
-                if (isBestDeal) {
-                    row.classList.add('best-deal');
-                }
+                // 3. Create Heading and Table Element
+                const heading = document.createElement('h2');
+                heading.textContent = `${batteryType} Price Comparison`;
+                container.appendChild(heading);
 
-                // Note: Accessing columns by their CSV header name directly
-                row.innerHTML = `
-                    <td>${item.Product_Name_Short || item.Product_Name || 'N/A'}</td>
-                    <td>${item.Store_Name}</td>
-                    <td><a href="${item.Store_Link}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
-                    <td>\$${totalCost.toFixed(2)}</td>
-                    <td>${item.Pack_Quantity}</td>
-                    <td>${item.Last_Updated}</td>
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Store</th>
+                            <th>Unit Price (BEST VALUE)</th>
+                            <th>Total Cost</th>
+                            <th>Pack Size</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
                 `;
-                tableBody.appendChild(row);
-            });
+                container.appendChild(table);
+                const tableBody = table.querySelector('tbody');
+
+                // 4. Populate Table Body
+                typeOffers.forEach(item => {
+                    // Safely access data, accounting for Papa Parse's lowercase conversion
+                    const unitPrice = parseFloat(item.Unit_Price || item.unit_price);
+                    const totalCost = parseFloat(item.Total_Cost || item.total_cost);
+                    const isBestDeal = unitPrice === bestUnitPrice;
+
+                    const row = document.createElement('tr');
+                    if (isBestDeal) {
+                        row.classList.add('best-deal');
+                    }
+
+                    row.innerHTML = `
+                        <td>${item.Product_Name || item.product_name || 'N/A'}</td>
+                        <td>${item.Store_Name || item.store_name}</td>
+                        <td><a href="${item.Store_Link || item.store_link}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
+                        <td>\$${totalCost.toFixed(2)}</td>
+                        <td>${item.Pack_Quantity || item.pack_quantity}</td>
+                        <td>${item.Last_Updated || item.last_updated}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
         }
     </script>
 </body>
