@@ -14,18 +14,49 @@
         body { 
             font-family: Arial, sans-serif; 
             line-height: 1.6; 
-            /* Center the main content */
             max-width: 1100px;
             margin: 0 auto;
             padding: 20px;
         }
         h2 { border-bottom: 2px solid var(--pico-secondary); padding-bottom: 5px; margin-top: 40px; }
         
-        /* Custom Table Highlights */
+        /* Custom Table Highlights (BOLD text only) */
         .best-deal { 
-            /* REMOVED: background-color: #d4edda !important; */
             font-weight: bold; 
-            color: var(--pico-primary) !important; /* Optional: Use Pico's primary color for emphasis */
+            color: var(--pico-primary) !important; /* Use primary color for emphasis */
+        }
+        
+        /* --- Tooltip CSS for Last Updated --- */
+        tr {
+            position: relative; /* Needed to position the tooltip */
+            cursor: pointer;
+        }
+        tr::after {
+            /* Grabs the hidden data from the data-updated attribute */
+            content: attr(data-updated); 
+            
+            /* Styling and positioning for the tooltip box */
+            position: absolute;
+            top: -30px; /* Positions it above the row */
+            right: 10px;
+            padding: 5px 10px;
+            background-color: var(--pico-secondary-background); /* Use Pico secondary background */
+            color: var(--pico-color);
+            border: 1px solid var(--pico-secondary);
+            border-radius: 4px;
+            z-index: 10;
+            white-space: nowrap; /* Prevents text wrap */
+            
+            /* Initially hidden */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+        }
+
+        /* Show the tooltip on hover (PC) */
+        tr:hover::after {
+            opacity: 1;
+            visibility: visible;
         }
         
         /* Footer and Disclosure */
@@ -53,7 +84,7 @@
 <body>
     <main class="container"> 
         <h1>Battery Price Comparison (Unit Cost & Historical Value)</h1>
-        <p>We track prices to find the absolute lowest <strong>Cost Per Unit</strong> for your batteries, comparing them against the best historical value.</p>
+        <p>We track prices to find the absolute lowest <strong>Cost Per Unit</strong> for your batteries, comparing them against the best historical value. **(Hover over any row for the last updated date)**</p>
 
         <div id="loading">Loading comparison data from offers.csv...</div>
         
@@ -126,7 +157,7 @@
 
                 const table = document.createElement('table');
                 
-                // UPDATED HEADERS: Removed Value Status
+                // UPDATED HEADERS: Removed Last Updated column
                 table.innerHTML = `
                     <thead>
                         <tr>
@@ -134,7 +165,6 @@
                             <th>Store</th>
                             <th>Unit Price (Current)</th>
                             <th>Best Hist. Unit Price</th>
-                            <th>Last Updated</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -145,22 +175,24 @@
                 // 4. Populate Table Body
                 typeOffers.forEach(item => {
                     const unitPrice = parseFloat(item.Unit_Price);
-                    // Access the corrected column for historical unit price
                     const historicalUnitLow = parseFloat(item.Best_Historical_Unit_Price); 
                     const isBestDeal = unitPrice === bestUnitPrice;
                     
                     const row = document.createElement('tr');
-                    if (isBestDeal) {
-                        row.classList.add('best-deal');
-                    }
                     
-                    // UPDATED DATA CELLS: Removed Value Status
+                    // ADDED DATA ATTRIBUTE FOR TOOLTIP
+                    row.setAttribute('data-updated', `Last Updated: ${item.Last_Updated}`);
+                    
+                    // Note: Removed the isBestDeal class from the row itself
+                    
+                    // UPDATED DATA CELLS: Removed Last Updated column, added bold styling to price
                     row.innerHTML = `
                         <td>${item.Brand} - ${item.Pack_Quantity} Pack</td>
                         <td>${item.Store_Name}</td>
-                        <td><a href="${item.Store_Link}" target="_blank">\$${unitPrice.toFixed(2)}</a></td>
+                        <td><a href="${item.Store_Link}" target="_blank">
+                            <span class="${isBestDeal ? 'best-deal' : ''}">\$${unitPrice.toFixed(2)}</span>
+                        </a></td>
                         <td>\$${historicalUnitLow ? historicalUnitLow.toFixed(2) : 'N/A'}</td>
-                        <td>${item.Last_Updated}</td>
                     `;
                     tableBody.appendChild(row);
                 });
