@@ -54,13 +54,14 @@
         function showComparisonTables(results) {
             document.getElementById('loading').style.display = 'none'; 
             
-            // Filter out empty rows
-            const rawData = results.data.filter(row => row.Unit_Price || row.unit_price); 
+            // Papa Parse reads data with the original capitalization. We use that here.
+            const rawData = results.data.filter(row => row.Unit_Price); 
             const container = document.getElementById('comparison-container');
             
             // 1. Group Data by Product_Name_Short
             const groupedData = rawData.reduce((acc, item) => {
-                const type = item.Product_Name_Short || item.product_name_short || 'Other Batteries';
+                // Accessing the EXACT capitalized header
+                const type = item.Product_Name_Short || 'Other Batteries';
                 if (!acc[type]) {
                     acc[type] = [];
                 }
@@ -68,7 +69,6 @@
                 return acc;
             }, {});
             
-            // Remove the initial loading text
             document.getElementById('loading').remove();
 
             // 2. Loop Through Groups and Build a Table for Each
@@ -78,12 +78,12 @@
                 // --- Group Logic ---
                 let bestUnitPrice = Infinity;
                 typeOffers.forEach(item => {
-                    const unitPrice = parseFloat(item.Unit_Price || item.unit_price);
+                    const unitPrice = parseFloat(item.Unit_Price); // Use capitalized name
                     if (!isNaN(unitPrice) && unitPrice > 0 && unitPrice < bestUnitPrice) {
                         bestUnitPrice = unitPrice;
                     }
                 });
-                typeOffers.sort((a, b) => parseFloat(a.Unit_Price || a.unit_price) - parseFloat(b.Unit_Price || b.unit_price));
+                typeOffers.sort((a, b) => parseFloat(a.Unit_Price) - parseFloat(b.Unit_Price)); // Use capitalized name
 
                 // 3. Create Heading and Table Element
                 const heading = document.createElement('h2');
@@ -91,7 +91,6 @@
                 container.appendChild(heading);
 
                 const table = document.createElement('table');
-                // Updated Table Headers for Historical Data
                 table.innerHTML = `
                     <thead>
                         <tr>
@@ -110,23 +109,24 @@
 
                 // 4. Populate Table Body
                 typeOffers.forEach(item => {
-                    const unitPrice = parseFloat(item.Unit_Price || item.unit_price);
-                    const historicalLow = parseFloat(item.Best_Historical_Price || item.best_historical_price); // NEW
+                    // Accessing the EXACT capitalized headers for display and logic
+                    const unitPrice = parseFloat(item.Unit_Price);
+                    const historicalLow = parseFloat(item.Best_Historical_Price); 
                     const isBestDeal = unitPrice === bestUnitPrice;
-
+                    
                     const row = document.createElement('tr');
                     if (isBestDeal) {
                         row.classList.add('best-deal');
                     }
                     
-                    // Note: We are using Brand and Pack Quantity to describe the product
+                    // Display Row with Corrected Header Access
                     row.innerHTML = `
                         <td>${item.Brand} - ${item.Pack_Quantity} Pack</td>
                         <td>${item.Store_Name}</td>
                         <td><a href="${item.Store_Link}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
                         <td class="historical-low">\$${historicalLow ? historicalLow.toFixed(4) : 'N/A'}</td>
-                        <td class="historical-low">${item.Current_V_Best || item.current_v_best || 'N/A'}</td>
-                        <td>${item.Last_Updated || item.last_updated}</td>
+                        <td class="historical-low">${item.Current_V_Best || 'N/A'}</td>
+                        <td>${item.Last_Updated}</td>
                     `;
                     tableBody.appendChild(row);
                 });
