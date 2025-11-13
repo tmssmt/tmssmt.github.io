@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battery Price Comparison - Best Value Today</title>
-    <meta name="description" content="Find the absolute cheapest cost per unit for popular AA, AAA, and specialty batteries across major retailers. Compare prices instantly!">
+    <title>Atlas Battery Price Comparison: Cheapest Cost Per Unit Today</title>
+    <meta name="description" content="We track prices to find the absolute lowest cost per unit for popular AA, AAA, and specialty batteries across major retailers. Stop overpaying and find the true best value instantly!">
 
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #333; }
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        h1 { color: #333; margin-top: 0; }
         p { color: #555; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #f2f2f2; }
         .best-deal { background-color: #d4edda; font-weight: bold; }
+        .seo-content { margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 5px solid #007bff; }
     </style>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js"></script>
 </head>
 <body>
     <h1>Battery Price Comparison (Unit Cost)</h1>
-    <p>We track prices to find the absolute lowest <strong>Cost Per Unit</strong> for your batteries. Data last updated: <span id="last-updated-time">Checking...</span></p>
+    <p>We track prices to find the absolute lowest **Cost Per Unit** for your batteries. Data last updated: <span id="last-updated-time">Checking...</span></p>
 
-    <div id="loading">Loading comparison data...</div>
+    <div id="loading">Loading comparison data... Please wait a moment...</div>
     
     <table id="comparisonTable">
         <thead>
@@ -39,72 +40,80 @@
             </tbody>
     </table>
 
+    <div class="seo-content">
+        <h2>Find the Cheapest Cost Per Unit for AA, AAA, and Specialty Batteries</h2>
+        <p>Welcome to Atlas Battery Comparison! We are your dedicated resource for finding the true best value, calculated by the **cost per unit**. Why pay for expensive packaging when you can compare prices and identify the absolute cheapest deal on the market? We track popular brands like Energizer and Duracell, especially for **AA battery bulk pack** offers, to ensure you stop overpaying and always get the best price for your electronics.</p>
+    </div>
+
     <script>
-    // 2. PASTE YOUR SPREADSHEET KEY HERE
-    const SPREADSHEET_KEY = '2PACX-1vQ2PBWSru5a3a7cW556KZn9MZJel0KSrVmI_OTqXt46vW04c-vo4K_J4JAqGjMHM57i8UmJNqf4uvXl'; 
-    
-    // 3. Initialize Tabletop.js and fetch data from the single sheet
-    window.onload = function() {
-        Tabletop.init({
-            key: SPREADSHEET_KEY,
-            callback: showComparisonTable,
-            simpleSheet: true 
-        });
-    }
-
-    // 4. Function to process and display the data
-    function showComparisonTable(data) {
-        document.getElementById('loading').style.display = 'none'; // Hide loading message
-        const tableBody = document.querySelector('#comparisonTable tbody');
-        let bestUnitPrice = Infinity;
-        let rows = [];
-
-        // --- Use a standard lookup function for safety ---
-        const getVal = (item, header) => item[header.toLowerCase().replace(/ /g, '_')];
-
-        // Find the lowest Unit Price across all offers
-        data.forEach(item => {
-            // Access the data using the safe lookup function
-            const unitPrice = parseFloat(getVal(item, 'Unit_Price')); 
-            
-            // Add the item only if Unit_Price is a valid positive number
-            if (!isNaN(unitPrice) && unitPrice > 0) {
-                rows.push(item);
-                if (unitPrice < bestUnitPrice) {
-                    bestUnitPrice = unitPrice;
-                }
-            }
-        });
-
-        // Sort the data by Unit_Price (lowest first)
-        rows.sort((a, b) => parseFloat(getVal(a, 'Unit_Price')) - parseFloat(getVal(b, 'Unit_Price')));
+        // 2. PASTE YOUR PUBLISHING KEY HERE (The long string starting with 2PACX-...)
+        const SPREADSHEET_KEY = '$$\text{2PACX-1vQ2PBWSru5a3a7cW556KZn9MZJel0KSrVmI\_OTqXt46vW04c-vo4K\_J4JAqGjMHM57i8UmJNqf4uvXl}$$'; 
         
-        // Set the overall last updated time
-        if (rows.length > 0) {
-            document.getElementById('last-updated-time').textContent = getVal(rows[0], 'Last_Updated');
+        // 3. Initialize Tabletop.js with the final, robust settings
+        window.onload = function() {
+            Tabletop.init({
+                key: SPREADSHEET_KEY, 
+                callback: showComparisonTable,
+                simpleSheet: false, // Set to false to force sheet name use
+                sheets: ['Offers'] // Explicitly tell it to look at the 'Offers' tab
+            });
         }
 
-        // Build the HTML table rows
-        rows.forEach(item => {
-            const unitPrice = parseFloat(getVal(item, 'Unit_Price'));
-            const isBestDeal = unitPrice === bestUnitPrice;
+        // 4. Function to process and display the data
+        function showComparisonTable(data) {
+            document.getElementById('loading').style.display = 'none'; // Hide loading message
 
-            const row = document.createElement('tr');
-            if (isBestDeal) {
-                row.classList.add('best-deal');
+            // Access the 'Offers' data, as specified in the initialization
+            const rawData = data.offers.elements; 
+            const tableBody = document.querySelector('#comparisonTable tbody');
+            let bestUnitPrice = Infinity;
+            let rows = [];
+
+            // Helper function to safely access column data (accounts for potential capitalization/spacing issues)
+            const getVal = (item, header) => item[header.toLowerCase().replace(/ /g, '_')];
+
+            // 5. Data Processing and Sorting Logic
+            rawData.forEach(item => {
+                const unitPrice = parseFloat(getVal(item, 'Unit_Price')); 
+                
+                // Only process rows with a valid Unit Price
+                if (!isNaN(unitPrice) && unitPrice > 0) {
+                    rows.push(item);
+                    if (unitPrice < bestUnitPrice) {
+                        bestUnitPrice = unitPrice;
+                    }
+                }
+            });
+
+            // Sort the data by Unit_Price (lowest first)
+            rows.sort((a, b) => parseFloat(getVal(a, 'Unit_Price')) - parseFloat(getVal(b, 'Unit_Price')));
+            
+            // Set the overall last updated time 
+            if (rows.length > 0) {
+                document.getElementById('last-updated-time').textContent = getVal(rows[0], 'Last_Updated');
             }
 
-            row.innerHTML = `
-                <td>${getVal(item, 'Product_Name_Short') || getVal(item, 'Product_Name')}</td>
-                <td>${getVal(item, 'Store_Name')}</td>
-                <td><a href="${getVal(item, 'Store_Link')}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
-                <td>\$${parseFloat(getVal(item, 'Total_Cost')).toFixed(2)}</td>
-                <td>${getVal(item, 'Pack_Quantity')}</td>
-                <td>${getVal(item, 'Last_Updated')}</td>
-            `;
-            tableBody.appendChild(row);
-        });
-    }
-</script>
+            // 6. Build the HTML table rows
+            rows.forEach(item => {
+                const unitPrice = parseFloat(getVal(item, 'Unit_Price'));
+                const isBestDeal = unitPrice === bestUnitPrice;
+
+                const row = document.createElement('tr');
+                if (isBestDeal) {
+                    row.classList.add('best-deal');
+                }
+
+                row.innerHTML = `
+                    <td>${getVal(item, 'Product_Name_Short') || getVal(item, 'Product_Name')}</td>
+                    <td>${getVal(item, 'Store_Name')}</td>
+                    <td><a href="${getVal(item, 'Store_Link')}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
+                    <td>\$${parseFloat(getVal(item, 'Total_Cost')).toFixed(2)}</td>
+                    <td>${getVal(item, 'Pack_Quantity')}</td>
+                    <td>${getVal(item, 'Last_Updated')}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    </script>
 </body>
 </html>
