@@ -160,8 +160,8 @@
                     row.innerHTML = `
                         <td>${item.Brand} - ${item.Pack_Quantity} Pack</td>
                         <td>${item.Store_Name}</td>
-                        <td><a href="${item.Store_Link}" target="_blank">\$${unitPrice.toFixed(4)}</a></td>
-                        <td>\$${historicalUnitLow ? historicalUnitLow.toFixed(4) : 'N/A'}</td>
+                        <td><a href="${item.Store_Link}" target="_blank">\$${unitPrice.toFixed(2)}</a></td>
+                        <td>\$${historicalUnitLow ? historicalUnitLow.toFixed(2) : 'N/A'}</td>
                         <td>${item.Current_V_Best || 'N/A'}</td>
                         <td>${item.Last_Updated}</td>
                     `;
